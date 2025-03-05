@@ -259,4 +259,5 @@ Answer:
 |         Jamaica Bay|         3|
 | Green-Wood Cemetery|         3|
 +--------------------+----------+
-
+```
+## Answer: Governor's Island/Ellis Island/Liberty Island
