@@ -1,0 +1,13 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:jquery.icalendar
+BEGIN:VEVENT
+ORGANIZER:MAILTO:futureteacher@dallasisd.org
+TITLE:Dallas ISD Educator Job Fair - South Oak Cliff High School
+DTSTART:20250327T213000Z
+DTEND:20250327T233000Z
+SUMMARY:Dallas ISD Educator Job Fair - South Oak Cliff High School
+DESCRIPTION:For details visit... https://www.eventzilla.net/e/dallasisdeducatorjobfairsouthoakcliffhig-2138666081
+LOCATION:3601 S Marsalis Ave., Dallas, Texas, United States
+END:VEVENT
+END:VCALENDAR
