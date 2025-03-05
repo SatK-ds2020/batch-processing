@@ -1,13 +1,66 @@
 # batch-processing
 
 ## Setting up the environment on GCP cloud VM(Ubuntu 20.04)
-- Generating SSH keys
-- Creating a virtual machine on GCP
-- Connecting to the VM with SSH
-- Installing Anaconda
-- Installing Docker
-- Creating SSH config file
-- Accessing the remote machine with VS Code and SSH remote
+1. Generating SSH keys
+2. Creating a virtual machine on GCP
+3. Connecting to the VM with SSH
+4. Installing Anaconda
+      ```
+       wget -P /tmp https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
+      sha256sum /tmp/Anaconda3-2020.02-Linux-x86_64.sh
+      bash /tmp/Anaconda3-2020.02-Linux-x86_64.sh
+      source ~/.bashrc (path added to .bashrc)
+      nano .bashrc
+     ```
+5. Installing Docker
+
+    ```
+    sudo apt-get update
+    sudo apt-get install docker.io
+    docker --version
+    docker run hello-world (it gave permission denied)
+    sudo groupadd docker
+    sudo usermod -aG docker $USER
+    logout
+    ssh de-vm2025
+    docker run hello-world
+    ```
+
+6. Installing docker-compose
+
+    ```
+     mkdir bin
+    cd bin/
+     wget https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-linux-x86_64 -O docker-compose
+      ls
+      chmod +x docker-compose
+      ls
+      ./docker-compose
+      ./docker-compose version
+       cd ..
+      nano .bashrc
+      source .bashrc
+     which docker-compose
+    docker-compose version
+    ```
+
+7. Creating SSH config file
+
+    ```
+    created config file at .ssh/ directory already having gcp public and private keys
+    configured as follow:
+    Host de-vm2025
+        HostName 34.42.82.230
+        User suman
+        IdentityFile C:/users/satin/.ssh/gcp
+    ```
+
+8. Accessing the remote machine with VS Code and SSH remote
+
+    ```
+    remote ssh plugin installed on VS-code
+    ssh into VM (connect to host)
+    ```
 
 ## Installing Java
 
@@ -147,60 +200,114 @@ Test that writing works as well:
 ```python
 df.write.parquet('zones')
 ```
-
-
-
-  1  ls
-    2  sudo su
-    3  mkdir spark
-    4  ls
-    5  cd spark/
-2. Java Installed    
-    6  wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz
-    7  tar xzfv openjdk-11.0.2_linux-x64_bin.tar.gz
-    8  rm openjdk-11.0.2_linux-x64_bin.tar.gz
-    9  ls
-   10  pwd
-3. Java Home set up
-   11  export JAVA_HOME="${HOME}/spark/jdk-11.0.2"
-   12  export PATH="${JAVA_HOME}/bin:${PATH}"
-   13  java --version
-   14  which java
-4. Spark Installed
-   15  wget https://archive.apache.org/dist/spark/spark-3.3.2/spark-3.3.2-bin-hadoop3.tgz
-   16  tar xzfv spark-3.3.2-bin-hadoop3.tgz
-   17  rm spark-3.3.2-bin-hadoop3.tgz
-5. Spark Home set up
-   18  export SPARK_HOME="${HOME}/spark/spark-3.3.2-bin-hadoop3"
-   19  export PATH="${SPARK_HOME}/bin:${PATH}"
-   20  spark-shell
-   21  cd ..
-   22  nano .bashrc
-6. Project directory created
-   23  mkdir notebooks
-   24  cd notebooks/
-   25  jupyter notebook
-   26  cd ..
-   27  wget -P /tmp https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
-   28  sha256sum /tmp/Anaconda3-2020.02-Linux-x86_64.sh
-   29  bash /tmp/Anaconda3-2020.02-Linux-x86_64.sh
-   30  source ~/.bashrc
-   31  nano .bashrc
-   32  ls
-   33  logout
-   34  which java
-   35  which pyspark
-   36  ls
-   37  cd notebooks
-   38  jupyter notebook
-   39  cd ..
-7. Python Path added as system variable
-   40  export PYTHONPATH="${SPARK_HOME}/python/:$PYTHONPATH"
-   41  export PYTHONPATH="${SPARK_HOME}/python/lib/py4j-0.10.9.5-src.zip:$PYTHONPATH"
-   42  which python
-   43  cd notebook
-   44  ls
-   45  cd notebooks
-   46  jupyter notebook
-   47  cd ..
-   48  history
+- Reading Data in Spark
+  
+    ```
+    df = spark.read \
+        .option("header", "true") \
+        .csv('fhvhv_tripdata_2021-01.csv')
+    ```
+- Reading as Panda dataframe
+ 
+      ```
+      df_pandas = pd.read_csv('fhvhv_tripdata_2021-01.csv')
+      ```
+- Reading schema
+ 
+      ```
+      spark.createDataFrame(df_pandas).schema
+      ```
+- creating schema
+ 
+      ```
+        schema = types.StructType([
+        types.StructField('hvfhs_license_num', types.StringType(), True),
+        types.StructField('dispatching_base_num', types.StringType(), True),
+        types.StructField('pickup_datetime', types.TimestampType(), True),
+        types.StructField('dropoff_datetime', types.TimestampType(), True),
+        types.StructField('PULocationID', types.IntegerType(), True),
+        types.StructField('DOLocationID', types.IntegerType(), True),
+        types.StructField('SR_Flag', types.StringType(), True)
+        ])
+        ```
+- Reading data in spark with defined schema
+  
+    ```
+    df = spark.read \
+        .option("header", "true") \
+        .schema(schema) \
+        .csv('fhvhv_tripdata_2021-01.csv')
+    ```
+- Partition/Repartition
+  
+    ```
+    df = df.repartition(24) # created 24 partitions
+    ```
+- write data to parquet
+  
+    ```
+    df.write.parquet('fhvhv/2021/01/', mode='overwrite')
+    df.coalesce(1).write.parquet('data/report/revenue/', mode='overwrite') 
+    
+    df_green_revenue \
+        .repartition(20) \
+        .write.parquet('data/report/revenue/green', mode='overwrite')
+    ```
+- wrting spark sql
+  
+    ```
+    import library
+    from pyspark.sql import functions as F
+    ```
+- Renaming and cretaed new columns
+  
+    ```
+    df \
+        .withColumn('pickup_date', F.to_date(df.pickup_datetime)) \
+        .withColumn('dropoff_date', F.to_date(df.dropoff_datetime)) \
+        .withColumn('base_id', crazy_stuff_udf(df.dispatching_base_num)) \
+        .select('base_id', 'pickup_date', 'dropoff_date', 'PULocationID', 'DOLocationID') \
+        .show()
+    ```
+- Select and filter
+  
+    ```
+    df.select('pickup_datetime', 'dropoff_datetime', 'PULocationID', 'DOLocationID') \
+      .filter(df.hvfhs_license_num == 'HV0003')
+    ```
+- adding new values with contant value using lit function (create a column with a literal value)
+  
+    ```
+    df_green_sel = df_green \
+        .select(common_colums) \
+        .withColumn('service_type', F.lit('green'))
+    
+    df_yellow_sel = df_yellow \
+        .select(common_colums) \
+        .withColumn('service_type', F.lit('yellow'))
+    ```
+- Union or merge data
+  
+    ```
+    df_trips_data = df_green_sel.unionAll(df_yellow_sel)
+    ```
+- Group by
+  
+    ```
+    df_trips_data.groupBy('service_type').count().show()
+    ```
+- creating temp table for sql queries
+  
+    ```
+    df_trips_data.registerTempTable('trips_data')
+    
+    spark.sql("""
+    SELECT
+        service_type,
+        count(1)
+    FROM
+        trips_data
+    GROUP BY 
+        service_type
+    """).show()
+    ```
