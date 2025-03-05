@@ -56,7 +56,7 @@ What is the average size of the Parquet (ending with .parquet extension) Files t
 - 75MB
 - 100MB
 ## Answer: 25MB
-<img src="partition_size.png" alt="Partition size">
+<img src="pics/parttition_size.png" alt="Partition size">
 
 ## Question 3: Count records 
 
