@@ -204,32 +204,31 @@ df_zones = spark.read.parquet('/home/suman/batch-pyspark/zones')
 df_zones.registerTempTable('zones')
 
 # spark-sql
-spark.sql("""
+    spark.sql("""
     SELECT
-        CONCAT(zp.Zone, ' / ', zd.Zone) AS PickUp_DropOff_Location,
+        zp.Zone AS Pickup_Location,
         COUNT(1) AS trip_count
     FROM 
         yellow1024 y
         LEFT JOIN zones zp ON y.PULocationID = zp.LocationID
-        LEFT JOIN zones zd ON y.DOLocationID = zd.LocationID
     GROUP BY 
-        PickUp_DropOff_Location
+        Pickup_Location
     ORDER BY 
-        trip_count
+        trip_count ASC
     LIMIT 5;
 """).show()
-[Stage 76:>                                                         (0 + 4) / 4]
 
-[Stage 76:==============>                                           (1 + 3) / 4]
-+-----------------------+----------+
-|PickUp_DropOff_Location|trip_count|
-+-----------------------+----------+
-|   Borough Park / Pe...|         1|
-|   Melrose South / H...|         1|
-|   Bay Ridge / Green...|         1|
-|   East Tremont / St...|         1|
-|   East Harlem South...|         1|
-+-----------------------+----------+
+Answer:
+[Stage 59:>                                                         (0 + 4) / 4]
++--------------------+----------+
+|     Pickup_Location|trip_count|
++--------------------+----------+
+|Governor's Island...|         1|
+|       Rikers Island|         2|
+|       Arden Heights|         2|
+|         Jamaica Bay|         3|
+| Green-Wood Cemetery|         3|
++--------------------+----------+
 ------------------------------------------------------------------------------------------------------------
 # pyspark code
 
@@ -238,30 +237,26 @@ df_joined = DY_1024 \
     .join(df_zones.alias("zp"), DY_1024.PULocationID == F.col("zp.LocationID"), "left") \
     .join(df_zones.alias("zd"), DY_1024.DOLocationID == F.col("zd.LocationID"), "left")
           
-# Concatenate Zone names for pickup and drop-off locations
-df_with_location = df_joined.withColumn(
-    "PickUp_DropOff_Location",
-    F.concat(F.col("zp.Zone"), F.lit(" / "), F.col("zd.Zone"))
-)          
-# Group by the concatenated pickup and drop-off location, and count trips
-df_grouped = df_with_location.groupBy("PickUp_DropOff_Location").agg(
+# Group by the pickup location and count trips
+df_grouped = df_joined.groupBy(F.col("zp.Zone").alias("pickup_zone")).agg(
     F.count("*").alias("trip_count")
-)   
- # Order by trip_count in descending order and limit to top 5
-df_least5 = df_grouped.orderBy(F.col("trip_count").asc()).limit(5)
+)
+
+# Order by trip_count in ascending order and limit to the least frequent pickup zones
+df_least_pickup_zones = df_grouped.orderBy(F.col("trip_count").asc()).limit(5)
 
 # Show the results
-df_least5.show()
+df_least_pickup_zones.show()
 
 Answer:
-[Stage 81:==============>                                           (1 + 3) / 4]
-+-----------------------+----------+
-|PickUp_DropOff_Location|trip_count|
-+-----------------------+----------+
-|   Borough Park / Pe...|         1|
-|   Melrose South / H...|         1|
-|   Bay Ridge / Green...|         1|
-|   East Tremont / St...|         1|
-|   East Harlem South...|         1|
-+-----------------------+----------+
+[Stage 55:==============>                                           (1 + 3) / 4]
++--------------------+----------+
+|         pickup_zone|trip_count|
++--------------------+----------+
+|Governor's Island...|         1|
+|       Rikers Island|         2|
+|       Arden Heights|         2|
+|         Jamaica Bay|         3|
+| Green-Wood Cemetery|         3|
++--------------------+----------+
 
